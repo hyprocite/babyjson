@@ -63,6 +63,10 @@ char unescaped_char(char c)
 std::pair<JsonObject,int> parse(std::string_view json)
 {
     if(json.empty())return {JsonObject{},0};
+    else if (size_t off = json.find_first_not_of(" \n\r\t\v\f\0"); off != 0 && off != json.npos) {
+        auto [obj, eaten] = parse(json.substr(off));
+        return {std::move(obj), eaten + off};
+    }
     else if((json[0] >= '0' && json[0]<= '9') || (json[0] == '+' && json[0] == '-'))
     {
         std::regex num_re{"[+-]?[0-9]+(\\.[0-9]*)?([eE][+-]?[0-9]+)?"};
@@ -96,7 +100,8 @@ std::pair<JsonObject,int> parse(std::string_view json)
             if(phase == RAW)
             {
                 if(ch == '"')
-                {
+                {   
+                    i += 1;
                     break;
                 }
                 else if( ch == '\\')
@@ -116,7 +121,7 @@ std::pair<JsonObject,int> parse(std::string_view json)
         }
         //size_t nextcomma = json.find('"',1); //从一号位开始使用find找到下一" 的位置
        // std::string str{json.substr(1,nextcomma-1)};
-        return {JsonObject{std::move(str)},i+1};
+        return {JsonObject{std::move(str)},i};
     }
     else if(json[0] == '[')
     {
@@ -198,8 +203,14 @@ std::pair<JsonObject,int> parse(std::string_view json)
 
 int main()
 {
-    std::string_view str  = R"JSON({"aaa":{"bbb":1},"ccc":2})JSON";
+    std::string_view str  = R"JSON(   {"aaa":
+    {"bbb":1},
+    "ccc":2})JSON";
    auto [obj ,j] = parse(str);
-    printnl(obj);
+//    auto& dict = std::get<JSONDict>(obj.inner);
+// std::cout << std::get<int>(dict["ccc"].inner) << "\n";   // 输出 2
+// auto& inner = std::get<JSONDict>(dict["aaa"].inner);
+// std::cout << std::get<int>(inner["bbb"].inner) << "\n";  // 输出 1 
+   printnl(obj);
     return 0;
 }

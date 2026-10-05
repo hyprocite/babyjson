@@ -27,7 +27,25 @@ struct JsonObject
      
     void do_print() const
     {
-        print(inner);
+        printnl(inner);
+    }
+    
+    template<class T>
+    bool is() const
+    {
+        return std::holds_alternative<T>(inner);
+    }
+
+    template<class T>
+    T  &get() const
+    {
+       return std::get<T>(inner);
+    }
+
+    template<class T>
+    T &get()
+    {
+       return std::get<T>(inner);
     }
 };
 
@@ -203,8 +221,8 @@ std::pair<JsonObject,int> parse(std::string_view json)
 
 int main()
 {
-    std::string_view str  = R"JSON(   {"aaa":
-    {"bbb":1},
+    std::string_view str  = R"JSON([[1,2
+    ],"aa",{"aa" : 1}]},
     "ccc":2})JSON";
    auto [obj ,j] = parse(str);
 //    auto& dict = std::get<JSONDict>(obj.inner);

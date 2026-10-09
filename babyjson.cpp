@@ -6,6 +6,7 @@
 #include<string_view>
 #include<string>
 #include <memory> 
+#include<iostream>
 #include <charconv>
 #include "print.h"
 struct JsonObject;
@@ -37,7 +38,7 @@ struct JsonObject
     }
 
     template<class T>
-    T  &get() const
+    T  &get() const 
     {
        return std::get<T>(inner);
     }
@@ -47,6 +48,7 @@ struct JsonObject
     {
        return std::get<T>(inner);
     }
+
 };
 
 template <class T>
@@ -218,17 +220,40 @@ std::pair<JsonObject,int> parse(std::string_view json)
     return {JsonObject{std:: nullptr_t{}},0};
 }
 
+template<class ...Fs>
+struct  overloaded : Fs...
+{
+    using Fs ::operator()...;
+};
 
+template<class ...Fs>
+overloaded(Fs...) -> overloaded<Fs...>;
 int main()
 {
-    std::string_view str  = R"JSON([[1,2
+    std::string_view str  = R"JSON([1,[1,2
     ],"aa",{"aa" : 1}]},
     "ccc":2})JSON";
-   auto [obj ,j] = parse(str);
+    std::string_view str2 = R"JSON()JSON";
+    auto [obj ,j] = parse(str);
+    std::visit(overloaded 
+    {
+        [&](int val)             { print("int:", val); },
+        [&](double val)          { print("double:", val); },
+        [&](bool val)            { print("bool:", val); },
+        [&](std::nullptr_t)      { print("null"); },
+        [&](const std::string& s){ print("string:", s); },
+        [&](const JSONDict& d)   { print("object"); },
+        [&](const JSONList& l)   { print("array"); }
+
+    },obj.inner);
+
+
+
+ //   std::visit([](auto&& o){printnl(o);}, obj.inner);
 //    auto& dict = std::get<JSONDict>(obj.inner);
 // std::cout << std::get<int>(dict["ccc"].inner) << "\n";   // 输出 2
 // auto& inner = std::get<JSONDict>(dict["aaa"].inner);
 // std::cout << std::get<int>(inner["bbb"].inner) << "\n";  // 输出 1 
-   printnl(obj);
+ //  printnl(obj);
     return 0;
 }
